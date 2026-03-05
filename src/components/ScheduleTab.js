@@ -1,5 +1,5 @@
-import React from 'react';
-import { Plus, ChevronLeft, ChevronRight, Search, MapPin, Clock, Repeat } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, ChevronLeft, ChevronRight, Search, MapPin, Clock, Repeat, Trash2, X } from 'lucide-react';
 import { categories } from '../constants/categories';
 import { isSameDay } from '../utils/dateUtils';
 
@@ -25,6 +25,21 @@ const ScheduleTab = ({
   hoverClass
 }) => {
   const today = new Date();
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // 삭제 확인 모달
+
+  // 일정 삭제 확인
+  const handleDeleteClick = (event, e) => {
+    e.stopPropagation(); // 이벤트 버블링 방지
+    setDeleteConfirm(event);
+  };
+
+  // 삭제 확인
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      deleteEvent(deleteConfirm.id);
+      setDeleteConfirm(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -164,10 +179,17 @@ const ScheduleTab = ({
                     {dayEvents.slice(0, 3).map(event => (
                       <div
                         key={event.id}
-                        className={`text-xs px-2 py-1 rounded ${categories[event.category].color} text-white truncate`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick(event, e);
+                        }}
+                        className={`text-xs px-2 py-1 rounded ${categories[event.category].color} text-white truncate hover:opacity-80 cursor-pointer flex items-center justify-between group`}
                       >
-                        {event.startTime && `${event.startTime} `}
-                        {event.title}
+                        <span className="flex-1 truncate">
+                          {event.startTime && `${event.startTime} `}
+                          {event.title}
+                        </span>
+                        <Trash2 size={12} className="opacity-0 group-hover:opacity-100 ml-1" />
                       </div>
                     ))}
                     {dayEvents.length > 3 && (
@@ -206,8 +228,7 @@ const ScheduleTab = ({
                     {dayEvents.map(event => (
                       <div
                         key={event.id}
-                        className={`p-3 rounded-lg ${categories[event.category].color} text-white cursor-pointer hover:opacity-90`}
-                        onClick={() => deleteEvent(event.id)}
+                        className={`p-3 rounded-lg ${categories[event.category].color} text-white cursor-pointer hover:opacity-90 relative group`}
                       >
                         <div className="font-medium">{event.title}</div>
                         {event.startTime && (
@@ -221,6 +242,12 @@ const ScheduleTab = ({
                             {event.location}
                           </div>
                         )}
+                        <button
+                          onClick={(e) => handleDeleteClick(event, e)}
+                          className="absolute top-2 right-2 p-1 bg-white bg-opacity-20 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -247,8 +274,7 @@ const ScheduleTab = ({
               getEventsForDate(currentDate).map(event => (
                 <div
                   key={event.id}
-                  className={`p-4 border ${borderClass} rounded-lg ${hoverClass} cursor-pointer`}
-                  onClick={() => deleteEvent(event.id)}
+                  className={`p-4 border ${borderClass} rounded-lg ${hoverClass} relative group`}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`w-1 h-full ${categories[event.category].color} rounded`} />
@@ -256,9 +282,17 @@ const ScheduleTab = ({
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className={`text-lg font-semibold ${textClass}`}>{event.title}</h4>
-                        <span className={`text-xs px-2 py-1 ${categories[event.category].color} text-white rounded`}>
-                          {categories[event.category].name}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-1 ${categories[event.category].color} text-white rounded`}>
+                            {categories[event.category].name}
+                          </span>
+                          <button
+                            onClick={(e) => handleDeleteClick(event, e)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </div>
                       
                       {event.startTime && (
@@ -293,6 +327,50 @@ const ScheduleTab = ({
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className={`${cardBgClass} rounded-lg shadow-xl p-6 max-w-md w-full`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-xl font-bold ${textClass}`}>일정 삭제</h3>
+              <button onClick={() => setDeleteConfirm(null)} className={textSecondaryClass}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className={`${textClass} mb-2`}>이 일정을 삭제하시겠습니까?</p>
+              <div className={`p-3 bg-gray-100 rounded-lg ${textSecondaryClass}`}>
+                <div className="font-semibold text-gray-800">{deleteConfirm.title}</div>
+                {deleteConfirm.startTime && (
+                  <div className="text-sm mt-1">
+                    {deleteConfirm.startTime} - {deleteConfirm.endTime}
+                  </div>
+                )}
+                {deleteConfirm.location && (
+                  <div className="text-sm mt-1">{deleteConfirm.location}</div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className={`flex-1 px-4 py-2 border ${borderClass} rounded-lg ${hoverClass} transition-colors`}
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                삭제
+              </button>
+            </div>
           </div>
         </div>
       )}
