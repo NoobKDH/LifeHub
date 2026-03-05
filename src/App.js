@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useStorage } from './hooks/useStorage';
+import React, { useState, useEffect } from 'react';
+//import { useStorage } from './hooks/useStorage';
 import { useCalendar } from './hooks/useCalendar';
 import Header from './components/Header';
 import TabNavigation from './components/TabNavigation';
@@ -11,11 +11,11 @@ import EventModal from './components/EventModal';
 
 function App() {
   const [activeTab, setActiveTab] = useState('todo');
-  const [todos, setTodos] = useStorage('todos', []);
-  const [habits, setHabits] = useStorage('habits', []);
-  const [schedules, setSchedules] = useStorage('schedules', []);
-  const [notes, setNotes] = useStorage('notes', []);
-  const [darkMode, setDarkMode] = useStorage('dark-mode', false);
+  const [todos, setTodos] = useState([]);
+  const [habits, setHabits] = useState([]);
+  const [schedules, setSchedules] = useState([]);
+  const [notes, setNotes] = useState([]);
+  const [darkMode, setDarkMode] = useState(false);
   
   // 일정 관련 state
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -38,6 +38,40 @@ function App() {
     memo: ''
   });
 
+  useEffect(() => {
+    const loadedTodos = localStorage.getItem('todos');
+    const loadedHabits = localStorage.getItem('habits');
+    const loadedSchedules = localStorage.getItem('schedules');
+    const loadedNotes = localStorage.getItem('notes');
+    const loadedDarkMode = localStorage.getItem('darkMode');
+
+    if (loadedTodos) setTodos(JSON.parse(loadedTodos));
+    if (loadedHabits) setHabits(JSON.parse(loadedHabits));
+    if (loadedSchedules) setSchedules(JSON.parse(loadedSchedules));
+    if (loadedNotes) setNotes(JSON.parse(loadedNotes));
+    if (loadedDarkMode) setDarkMode(JSON.parse(loadedDarkMode));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('todos', JSON.stringify(todos));
+  }, [todos]);
+
+  useEffect(() => {
+    localStorage.setItem('habits', JSON.stringify(habits));
+  }, [habits]);
+
+  useEffect(() => {
+    localStorage.setItem('schedules', JSON.stringify(schedules));
+  }, [schedules]);
+
+  useEffect(() => {
+    localStorage.setItem('notes', JSON.stringify(notes));
+  }, [notes]);
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+  }, [darkMode]);
+
   // 캘린더 훅 사용
   const { monthDays, weekDays, getEventsForDate } = useCalendar(
     currentDate,
@@ -47,18 +81,19 @@ function App() {
   );
 
   // 할 일 관련 함수
-  const addTodo = () => {
+  const addTodo = (dueDate = null) => {
     if (newTodo.trim()) {
       setTodos([...todos, {
         id: Date.now(),
         text: newTodo,
         completed: false,
         priority: 'medium',
-        category: '개인'
+        category: '개인',
+        dueDate: dueDate
       }]);
       setNewTodo('');
     }
-  };
+  }
 
   const toggleTodo = (id) => {
     setTodos(todos.map(todo => 
@@ -82,6 +117,11 @@ function App() {
     ));
   };
 
+  const changeDueDate = (id, dueDate) => {
+    setTodos(todos.map(todo => 
+      todo.id === id ? { ...todo, dueDate } : todo
+    ));
+  };
   // 습관 관련 함수
   const addHabit = () => {
     if (newHabit.trim()) {
@@ -198,6 +238,7 @@ function App() {
             deleteTodo={deleteTodo}
             changePriority={changePriority}
             changeCategory={changeCategory}
+            changeDueDate={changeDueDate}
             cardBgClass={cardBgClass}
             textClass={textClass}
             textSecondaryClass={textSecondaryClass}
