@@ -17,26 +17,26 @@
 - Node.js 18 이상
 
 ### 설치
-\`\`\`bash
+bash
 git clone https://github.com/yourusername/lifehub.git
 cd lifehub
 npm install
-\`\`\`
+
 
 ### 실행
-\`\`\`bash
+bash
 # 웹 개발 모드
 npm start
 
 # Electron 앱으로 실행
 npm run electron:dev
-\`\`\`
+
 
 ### 빌드
-\`\`\`bash
+bash
 # Windows 실행 파일 생성
 npm run electron:build-win
-\`\`\`
+
 
 ## 🏗️ 기술 스택
 - React 18
